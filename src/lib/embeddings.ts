@@ -1,21 +1,26 @@
-import { OpenAIApi, Configuration } from "openai-edge";
-
-const config = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-const openai = new OpenAIApi(config);
-
-export async function getEmbeddings(text: string) {
+export async function getEmbeddings(text: string): Promise<number[]> {
   try {
-    const response = await openai.createEmbedding({
-      model: "text-embedding-ada-002",
-      input: text.replace(/\n/g, " "),
+    const response = await fetch("https://api.jina.ai/v1/embeddings", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.JINA_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        input: [text.replace(/\n/g, " ").slice(0, 512)],
+        model: "jina-embeddings-v2-base-en",
+      }),
     });
-    const result = await response.json();
-    return result.data[0].embedding as number[];
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Jina API error: ${response.status} - ${error}`);
+    }
+
+    const data = await response.json();
+    return data.data[0].embedding as number[];
   } catch (error) {
-    console.log("error calling openai embeddings api", error);
+    console.error("getEmbeddings error:", error);
     throw error;
   }
 }

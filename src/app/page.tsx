@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { UserButton, auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";        // server-only
+import { UserButton } from "@clerk/nextjs";          // client UI components
 import Link from "next/link";
 import { ArrowRight, LogIn } from "lucide-react";
 import FileUpload from "@/components/FileUpload";

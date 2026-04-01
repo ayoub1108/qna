@@ -8,10 +8,9 @@ export async function getMatchesFromEmbeddings(
 ) {
   try {
     const client = new Pinecone({
-      environment: process.env.PINECONE_ENVIRONMENT!,
-      apiKey: process.env.PINECONE_API_KEY!,
+      apiKey: process.env.PINECONE_API_KEY!, // ← removed environment
     });
-    const pineconeIndex = await client.index("chatpdf");
+    const pineconeIndex = client.index(process.env.PINECONE_INDEX_NAME!); // ← use env var, removed await
     const namespace = pineconeIndex.namespace(convertToAscii(fileKey));
     const queryResult = await namespace.query({
       topK: 5,
@@ -30,7 +29,7 @@ export async function getContext(query: string, fileKey: string) {
   const matches = await getMatchesFromEmbeddings(queryEmbeddings, fileKey);
 
   const qualifyingDocs = matches.filter(
-    (match) => match.score && match.score > 0.7
+    (match) => match.score && match.score > 0.5
   );
 
   type Metadata = {
@@ -39,6 +38,5 @@ export async function getContext(query: string, fileKey: string) {
   };
 
   let docs = qualifyingDocs.map((match) => (match.metadata as Metadata).text);
-  // 5 vectors
   return docs.join("\n").substring(0, 3000);
 }

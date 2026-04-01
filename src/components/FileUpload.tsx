@@ -1,5 +1,5 @@
 "use client";
-import { uploadToS3 } from "@/lib/s3";
+import { uploadToSupabase } from "@/lib/supabase-client";
 import { useMutation } from "@tanstack/react-query";
 import { Inbox, Loader2 } from "lucide-react";
 import React from "react";
@@ -8,11 +8,10 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
-// https://github.com/aws/aws-sdk-js-v3/issues/4126
-
 const FileUpload = () => {
   const router = useRouter();
   const [uploading, setUploading] = React.useState(false);
+
   const { mutate, isLoading } = useMutation({
     mutationFn: async ({
       file_key,
@@ -33,21 +32,28 @@ const FileUpload = () => {
     accept: { "application/pdf": [".pdf"] },
     maxFiles: 1,
     onDrop: async (acceptedFiles) => {
-      const file = acceptedFiles[0];
+      const file = acceptedFiles[0]; // ✅ file is already the single File object
+
       if (file.size > 10 * 1024 * 1024) {
-        // bigger than 10mb!
         toast.error("File too large");
         return;
       }
 
       try {
         setUploading(true);
-        const data = await uploadToS3(file);
-        console.log("meow", data);
-        if (!data?.file_key || !data.file_name) {
+
+        // ✅ pass `file` directly, not `file[0]`
+        // ✅ store result in `data` so it can be used below
+        const data = await uploadToSupabase(
+          file,
+          `${Date.now()}-${file.name}`
+        );
+
+        if (!data?.file_key || !data?.file_name) {
           toast.error("Something went wrong");
           return;
         }
+
         mutate(data, {
           onSuccess: ({ chat_id }) => {
             toast.success("Chat created!");
@@ -59,12 +65,14 @@ const FileUpload = () => {
           },
         });
       } catch (error) {
-        console.log(error);
+        console.error(error);
+        toast.error("Upload failed");
       } finally {
         setUploading(false);
       }
     },
   });
+
   return (
     <div className="p-2 bg-white rounded-xl">
       <div
@@ -76,7 +84,6 @@ const FileUpload = () => {
         <input {...getInputProps()} />
         {uploading || isLoading ? (
           <>
-            {/* loading state */}
             <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
             <p className="mt-2 text-sm text-slate-400">
               Spilling Tea to GPT...
@@ -94,3 +101,4 @@ const FileUpload = () => {
 };
 
 export default FileUpload;
+

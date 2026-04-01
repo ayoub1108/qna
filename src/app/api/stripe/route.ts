@@ -10,7 +10,7 @@ import { NextResponse } from "next/server";
 const return_url = process.env.NEXT_BASE_URL + "/";
 
 export async function GET() {
-  try {
+  /*try {
     const { userId } = await auth();
     const user = await currentUser();
 
@@ -63,5 +63,5 @@ export async function GET() {
   } catch (error) {
     console.log("stripe error", error);
     return new NextResponse("internal server error", { status: 500 });
-  }
+  }*/
 }

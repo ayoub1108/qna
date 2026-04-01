@@ -1,8 +1,8 @@
 import { db } from "@/lib/db";
 import { chats } from "@/lib/db/schema";
 import { loadS3IntoPinecone } from "@/lib/pinecone";
-import { getS3Url } from "@/lib/s3";
-import { auth } from "@clerk/nextjs";
+import { getSupabaseUrl } from "@/lib/supabase-client";  // ← replaces getS3Url
+import { auth } from "@clerk/nextjs/server";              // ← add /server
 import { NextResponse } from "next/server";
 
 // /api/create-chat
@@ -21,7 +21,7 @@ export async function POST(req: Request, res: Response) {
       .values({
         fileKey: file_key,
         pdfName: file_name,
-        pdfUrl: getS3Url(file_key),
+        pdfUrl: getSupabaseUrl(file_key),
         userId,
       })
       .returning({
